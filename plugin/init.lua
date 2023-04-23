@@ -32,7 +32,7 @@ vim.api.nvim_create_user_command('Glab', function (opts)
     end,
     {
 	nargs = "*",
-	desc = "Call the `glab` executable. Equivalent to calling `:!glab`.",
+	desc = "Call the `glab` executable. Equivalent to calling `:!glab`, but renders the output in a floating window.",
     }
 )
 
