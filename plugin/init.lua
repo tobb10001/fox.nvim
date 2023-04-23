@@ -1,6 +1,6 @@
 local M = {}
 
-local glab = require("glab")
+local glab = require("fox.glab")
 
 vim.api.nvim_create_user_command('Glab', function (opts)
     local args = opts.fargs
