@@ -1,0 +1,26 @@
+query($fullPath: ID!) {
+  project(fullPath: $fullPath) {
+    name
+    issues(state: opened) {
+      nodes{
+        iid,
+        title,
+        description,
+        labels {
+          nodes {
+            title,
+            description,
+          }
+        }
+        
+      }
+  	}
+    mergeRequests(state: opened) {
+      nodes {
+        iid,
+        title,
+        description,
+      }
+    }
+  }
+}

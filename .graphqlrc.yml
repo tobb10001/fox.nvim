@@ -1,0 +1,2 @@
+schema: https://gitlab.com/api/graphql
+documents: '**/*.gql'
