@@ -1,12 +1,8 @@
-local Event = require("fox.event")
 local Job = require("plenary.job")
 local Path = require("plenary.path")
 
 M = {}
 
-M.events = {
-  project_info = Event(),
-}
 M.data = {}
 
 local gql_path = Path:new(
@@ -14,13 +10,36 @@ local gql_path = Path:new(
     :parents()[1] -- current file directory
 ):joinpath("gql")
 
-local gql_project_info = (function ()
-  local f = io.open(gql_loc, "rb")
+local function file_basename(path, ext)
+  local basename = path
+  local pos = -1
+  repeat
+    basename = basename:sub(pos + 1)
+    pos = basename:find("/")
+  until pos == nil
+  if vim.endswith(basename, ext) then
+    basename = basename:gsub(ext .. "$", "")
+  end
+  return basename
+end
+
+local function read_file(file)
+  local f = io.open(file, "rb")
   if f == nil then
     error("File not found.")
   end
   local result = f:read("*a")
   f:close()
+  return result
+end
+
+local gql_queries = (function()
+  local result = {}
+  local gql_paths = vim.split(vim.fn.glob(gql_path .. "**/*.gql"), "\n")
+  for _, path in pairs(gql_paths) do
+    local basename = file_basename(path, ".gql")
+    result[basename] = read_file(path)
+  end
   return result
 end)()
 
@@ -45,22 +64,17 @@ local function graphql_call(gql, variables, hostname)
   local job = Job:new({
     command = "glab",
     args = args,
-    on_exit = function(j, return_val)
-      if return_val ~= 0 then
-        vim.api.nvim_err_write("glab exited with non-zero exit code " .. return_val .. "\n")
-        vim.api.nvim_err_write(table.concat(j:stderr_result(), "\n"))
-        return
-      end
-      M.data.project_info = vim.json.decode(j:result())
-      M.events.project_info.emit()
-    end,
   })
-  job:sync()
+  local stdout, code = job:sync()
 
-  local stdout = table.concat(job:result(), " ")
-  local stderr = table.concat(job:stderr_result(), " ")
-  vim.api.nvim_out_write("stdout: " .. stdout .. "\n")
-  vim.api.nvim_err_write("stderr: " .. stderr .. "\n")
+  if code ~= 0 then
+    vim.notify(
+      "glab returned with non-zero exit code " .. code .. ": " .. job:stderr_result(),
+      vim.log.levels.ERROR)
+    return
+  end
+
+  return vim.json.decode(table.concat(stdout, ""))
 end
 
 return M
