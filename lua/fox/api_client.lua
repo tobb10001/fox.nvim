@@ -9,10 +9,10 @@ M.events = {
 }
 M.data = {}
 
-local gql_loc = Path:new(
+local gql_path = Path:new(
   Path:new(debug.getinfo(1, "S").source:sub(2)) -- current file location
     :parents()[1] -- current file directory
-):joinpath("call.gql").filename
+):joinpath("gql")
 
 local gql_project_info = (function ()
   local f = io.open(gql_loc, "rb")
