@@ -1,13 +1,12 @@
 local Job = require("plenary.job")
 local Path = require("plenary.path")
+local u = require("fox.utils")
 
 M = {}
 
-M.data = {}
-
 local gql_path = Path:new(
   Path:new(debug.getinfo(1, "S").source:sub(2)) -- current file location
-    :parents()[1] -- current file directory
+  :parents()[1]                                 -- current file directory
 ):joinpath("gql")
 
 local function file_basename(path, ext)
@@ -23,22 +22,12 @@ local function file_basename(path, ext)
   return basename
 end
 
-local function read_file(file)
-  local f = io.open(file, "rb")
-  if f == nil then
-    error("File not found.")
-  end
-  local result = f:read("*a")
-  f:close()
-  return result
-end
-
 local gql_queries = (function()
   local result = {}
   local gql_paths = vim.split(vim.fn.glob(gql_path .. "**/*.gql"), "\n")
   for _, path in pairs(gql_paths) do
     local basename = file_basename(path, ".gql")
-    result[basename] = read_file(path)
+    result[basename] = u.read_file(path)
   end
   return result
 end)()
@@ -52,13 +41,13 @@ local function graphql_call(gql, variables, hostname)
   -- as variables.
   local args = { "api", "graphql" }
   for k, v in pairs(variables) do
-    args[#args+1] = "--field"
-    args[#args+1] = k .. "=" .. v
+    args[#args + 1] = "--field"
+    args[#args + 1] = k .. "=" .. v
   end
 
   if hostname ~= nil then
-    args[#args+1] = "--hostname"
-    args[#args+1] = hostname
+    args[#args + 1] = "--hostname"
+    args[#args + 1] = hostname
   end
 
   local job = Job:new({
@@ -75,6 +64,25 @@ local function graphql_call(gql, variables, hostname)
   end
 
   return vim.json.decode(table.concat(stdout, ""))
+end
+
+function M.get_data(key, variables, opts)
+  -- Create a key.
+  -- The key consists of the actual key, as well as an addition, that is inferred from
+  -- the variables.
+  local var_key = table.concat(variables, "")
+  local composed_key = key .. var_key
+  -- See if we can get something from the cache.
+  local cached = nil
+  if not opts.force_reload then
+    cached = cache[composed_key]
+  end
+  if cached and opts.max_age and os.time() - cached.time > opts.max_age then
+    cached = nil
+  end
+  if cached then
+    return cached.data
+  end
 end
 
 return M
