@@ -1,5 +1,8 @@
 local Job = require("plenary.job")
 local Path = require("plenary.path")
+
+local cache = require("fox.cache")
+local log = require("fox.log")
 local u = require("fox.utils")
 
 M = {}
@@ -32,14 +35,15 @@ local gql_queries = (function()
   return result
 end)()
 
-local function graphql_call(gql, variables, hostname)
-  variables.query = gql
+local function graphql_call(query_name, variables, hostname)
+  variables.query = gql_queries[query_name]
   -- Convert variables to fields.
   -- As explained in glab-api(1), fields are provided with the -F / --field flag, and
   -- each field is added to the request body as JSON.
   -- For the graphql endpoint, all fields except query and operationName are treated
   -- as variables.
   local args = { "api", "graphql" }
+
   for k, v in pairs(variables) do
     args[#args + 1] = "--field"
     args[#args + 1] = k .. "=" .. v
@@ -57,31 +61,37 @@ local function graphql_call(gql, variables, hostname)
   local stdout, code = job:sync()
 
   if code ~= 0 then
-    vim.notify(
-      "Failed to perform GraphQL call. glab returned with non-zero exit code " .. code .. ": " .. job:stderr_result(),
-      vim.log.levels.ERROR)
-    return
+    error(
+      "Failed to perform GraphQL call. glab returned with non-zero exit code " .. code .. ": " .. job:stderr_result())
   end
 
-  return vim.json.decode(table.concat(stdout, ""))
+  local tab = vim.json.decode(table.concat(stdout, ""))
+
+  if tab == nil or tab.errors ~= nil then
+    error("Error on GraphQL call: " .. tab.errors[1].message, vim.log.levels.ERROR)
+  end
+
+  return tab
 end
 
 function M.get_data(key, variables, opts)
+  opts = opts or {}
   -- Create a key.
   -- The key consists of the actual key, as well as an addition, that is inferred from
   -- the variables.
   local var_key = table.concat(variables, "")
-  local composed_key = key .. var_key
+  local cache_key = key .. var_key
   -- See if we can get something from the cache.
   local cached = nil
   if not opts.force_reload then
-    cached = cache[composed_key]
-  end
-  if cached and opts.max_age and os.time() - cached.time > opts.max_age then
-    cached = nil
+    cached = cache.get(cache_key, { max_age = opts.max_age })
   end
   if cached then
-    return cached.data
+    return cached
+  else
+    data = graphql_call(key, variables)
+    cache.set(cache_key, data)
+    return data
   end
 end
 

@@ -12,9 +12,8 @@ query($fullPath: ID!) {
             description,
           }
         }
-        
       }
-  	}
+    }
     mergeRequests(state: opened) {
       nodes {
         iid,

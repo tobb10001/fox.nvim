@@ -44,7 +44,7 @@ function M.origin_project_path()
     vim.notify(msg, vim.log.levels.ERROR)
     error(msg)
   end
-  return extract_project_path(stdout)
+  return M.extract_project_path(stdout[1])
 end
 
 return M

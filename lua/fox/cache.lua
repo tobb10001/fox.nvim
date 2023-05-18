@@ -1,8 +1,7 @@
 --[[ Caching
 
 Just a simple key value cache, that tracks the age of cache entries. ]]
-
-local M
+local M = {}
 
 local cache = {}
 
