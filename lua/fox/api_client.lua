@@ -58,7 +58,7 @@ local function graphql_call(gql, variables, hostname)
 
   if code ~= 0 then
     vim.notify(
-      "glab returned with non-zero exit code " .. code .. ": " .. job:stderr_result(),
+      "Failed to perform GraphQL call. glab returned with non-zero exit code " .. code .. ": " .. job:stderr_result(),
       vim.log.levels.ERROR)
     return
   end
