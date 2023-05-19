@@ -71,7 +71,7 @@ local function graphql_call(query_name, variables, hostname)
     error("Error on GraphQL call: " .. tab.errors[1].message, vim.log.levels.ERROR)
   end
 
-  return tab
+  return tab.data
 end
 
 function M.get_data(key, variables, opts)
