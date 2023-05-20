@@ -16,7 +16,7 @@ function M.get(key, max_age)
   if max_age and os.time() - cache[key].time > max_age then
     return nil
   end
-  return cache.data
+  return cache[key].data
 end
 
 return M
