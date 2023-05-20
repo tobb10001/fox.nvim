@@ -9,9 +9,13 @@ function M.issue_list()
   local buf = vim.api.nvim_create_buf(true, true)
   vim.api.nvim_win_set_buf(win, buf)
 
-  for _, issue in ipairs(issues) do
-    vim.api.nvim_buf_set_lines(buf, 1, 1, false, { "#" .. issue.iid .. " " .. issue.title })
+  local lines = {}
+
+  for iid, issue in pairs(issues) do
+    lines[#lines + 1] = "#" .. iid .. " " .. issue.title
   end
+
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 end
 
 return M

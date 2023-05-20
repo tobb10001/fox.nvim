@@ -2,7 +2,6 @@ local Job = require("plenary.job")
 local Path = require("plenary.path")
 
 local cache = require("fox.cache")
-local log = require("fox.log")
 local u = require("fox.utils")
 
 M = {}

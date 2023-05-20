@@ -5,7 +5,12 @@ local M = {}
 
 function M.get_issues()
   local project = client.get_data("project", { fullPath = utils.origin_project_path() }).project
-  return project.issues.nodes
+  -- convert to mapping iid -> issue node
+  local map = {}
+  for _, node in ipairs(project.issues.nodes) do
+    map[node.iid] = node
+  end
+  return map
 end
 
 return M
